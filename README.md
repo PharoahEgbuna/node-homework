@@ -226,10 +226,10 @@ Now you are connected to PostgreSQL.
 
 Next, create the user and databases for this course. Run each command one at a time. Press Enter after each command.
 
-Replace `<pg-password>` with the password you chose for `mypguser`.
+Replace `FinerPrint26!!` with the password you chose for `mypguser`.
 
 ```sql
-CREATE ROLE mypguser LOGIN CREATEDB PASSWORD '<pg-password>';
+CREATE ROLE mypguser LOGIN CREATEDB PASSWORD 'FinerPrint26!!';
 CREATE DATABASE nodehomework OWNER mypguser;
 CREATE DATABASE tasklist OWNER mypguser;
 CREATE DATABASE testtasklist OWNER mypguser;
@@ -486,12 +486,12 @@ TEST_DATABASE_URL=postgresql://<username>@localhost/testtasklist?host=/tmp
 
 Use the password you created for the `mypguser` PostgreSQL user.
 
-Replace `<pg-password>` with that password.
+Replace `FinerPrint26!!` with that password.
 
 ```text
-DB_URL=postgresql://mypguser:<pg-password>@localhost/nodehomework
-DATABASE_URL=postgresql://mypguser:<pg-password>@localhost/tasklist
-TEST_DATABASE_URL=postgresql://mypguser:<pg-password>@localhost/testtasklist
+DB_URL=postgresql://mypguser:FinerPrint26!!@localhost/nodehomework
+DATABASE_URL=postgresql://mypguser:FinerPrint26!!@localhost/tasklist
+TEST_DATABASE_URL=postgresql://mypguser:FinerPrint26!!@localhost/testtasklist
 ```
 
 </details>
