@@ -9,7 +9,6 @@ router.get("/dogs", (req, res) => {
 
 router.post("/adopt", (req, res) => {
   const { name, address, email, dogName } = req.body;
-
   res.status(201).json({
     message: `Adoption request received. We will contact you at ${email} for further details.`,
     application: {
@@ -26,5 +25,7 @@ router.get("/error", (req, res, next) => {
   next(new Error("Test error"));
 });
 
-module.exports = router;
+router.get("/images/dachshund.png", () => {
+});
 
+module.exports = router;
