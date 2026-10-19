@@ -21,3 +21,28 @@ fs.promises.writeFile(path.join(__dirname, 'sample-files', 'demo.txt'), 'Hello, 
 fs.promises.readFile(path.join(__dirname, 'sample-files', 'demo.txt'), 'utf8').then(data => console.log(`fs.promises read: ${data}`));
 
 // Streams for large files- log first 40 chars of each chunk
+const writeStream = fs.createWriteStream(path.join(__dirname, 'sample-files', 'largefile.txt'), { encoding: 'utf8' });
+
+for (let i = 0; i < 100; i++) {
+  writeStream.write(`Line ${i + 1}\n`);
+}
+writeStream.end();
+
+writeStream.on('finish', () => {
+  const readStream = fs.createReadStream(path.join(__dirname, 'sample-files', 'largefile.txt'), {
+    encoding: 'utf8',
+    highWaterMark: 1024
+  });
+
+  readStream.on('data', (chunk) => {
+    console.log(`Read chunk: ${chunk.slice(0, 40)}`);
+  });
+
+  readStream.on('end', () => {
+    console.log('Finished reading large file with streams.');
+  });
+
+  readStream.on('error', (err) => {
+    console.error('Read error:', err);
+  });
+});
