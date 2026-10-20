@@ -2,9 +2,8 @@ const express = require("express");
 const app = express();
 const timeRouter = require("./routes/timeRoutes");
 const userRouter = require("./routes/userRoutes");
-const notFound = require("./middlewares/notFoundMiddleware");
-const errorHandler = require("./middlewares/errorHandlerMiddleware");
-
+const notFound = require("./middleware/not-found");
+const errorHandler = require("./middleware/error-handler");
 
 app.use(express.json());
 

@@ -32,7 +32,5 @@ router.get("/error", (req, res, next) => {
   next(new Error("Test error"));
 });
 
-router.get("/images/dachshund.png", () => {
-});
 
 module.exports = router;
