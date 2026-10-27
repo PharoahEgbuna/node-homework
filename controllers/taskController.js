@@ -69,7 +69,7 @@ function update(req, res) {
 
     if (error) {
         return res.status(400).json({
-            message: "Invalid task id",
+            message: "Invalid task data",
         });
     }
 
@@ -113,9 +113,7 @@ function deleteTask(req, res) {
 
     const { userId, ...sanitizedTask } = removedTask[0];
 
-    res.status(200).json({
-        sanitizedTask,
-    })
+    res.status(200).json(sanitizedTask);
 }
 
 module.exports = {
