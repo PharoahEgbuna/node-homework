@@ -4,7 +4,7 @@ const scrypt = util.promisify(crypto.scrypt);
 const { userSchema } = require("../validation/userSchema");
 const pool = require("../db/pg-pool");
 
-async function register(req, res) {
+async function register(req, res, next) {
     const { error, value } = userSchema.validate(req.body, { abortEarly: false });
 
     if (error) {
@@ -26,9 +26,7 @@ async function register(req, res) {
                 message: "User already exists"
             });
         }
-        return res.status(500).json({
-            message: "Error occurred while registering user"
-        });
+        return next(e);
     }
 
     // let hashedPassword = await hashPassword(value.password);
