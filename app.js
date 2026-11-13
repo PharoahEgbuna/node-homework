@@ -11,8 +11,6 @@ const pool = require("./db/pg-pool");
 app.use(express.json());
 
 global.user_id = null;
-// global.users = [];
-// global.tasks = [];
 
 app.use("/api", timeRouter);
 app.use("/api/users", userRouter);

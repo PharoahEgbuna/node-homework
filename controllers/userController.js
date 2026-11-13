@@ -13,7 +13,7 @@ async function register(req, res, next) {
             details: error.details,
         });
     } 
-
+    
     let result = null;
     value.hashed_password = await hashPassword(value.password);
 
@@ -29,11 +29,9 @@ async function register(req, res, next) {
         return next(e);
     }
 
-    // let hashedPassword = await hashPassword(value.password);
     const user = result.rows[0];
 
     global.user_id = user.id;
-    // global.users.push(user);
 
     res.status(201).json({
         name: user.name,
