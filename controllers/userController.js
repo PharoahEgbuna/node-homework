@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 const { userSchema } = require("../validation/userSchema");
-const pool = require("../db/pg-pool");
+const prisma = require("../db/prisma");
 
 async function register(req, res, next) {
     const { error, value } = userSchema.validate(req.body, { abortEarly: false });
@@ -14,22 +14,23 @@ async function register(req, res, next) {
         });
     } 
     
-    let result = null;
-    value.hashed_password = await hashPassword(value.password);
+    let user = null;
+    value.hashedPassword = await hashPassword(value.password);
 
     try {
-        result = await pool.query(`INSERT INTO users (email, name, hashed_password) VALUES ($1, $2, $3) RETURNING id, email, name`, 
-            [value.email, value.name, value.hashed_password]);
-    } catch (e) {
-        if (e.code === "23505") {
+        user = await prisma.user.create({
+            data: {name: value.name, email: value.email, hashedPassword: value.hashedPassword },
+            select: {name: true, email:true, id: true}
+        });
+    } catch (err) {
+        if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
             return res.status(400).json({
                 message: "User already exists"
             });
+        } else {
+            return next(err);
         }
-        return next(e);
     }
-
-    const user = result.rows[0];
 
     global.user_id = user.id;
 
@@ -40,18 +41,19 @@ async function register(req, res, next) {
 }
 
 async function logon(req, res) {
-    const email = req.body.email;
+    const email = req.body.email.toLowerCase();
     const password = req.body.password;
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = await prisma.user.findUnique({
+        where: { email },
+    });
 
-    if (!result.rows?.length) {
+    if (!user) {
         return res.status(401).json({
             message: "User not found"
         });
     }
 
-    const user = result.rows[0];    
-    const goodCredentials = user && await comparePassword(password, result.rows[0].hashed_password);
+    const goodCredentials = user && await comparePassword(password, user.hashedPassword);
 
     if (!goodCredentials) {
         return res.status(401).json({
