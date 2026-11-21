@@ -40,28 +40,22 @@ async function show(req, res, next) {
         });
     }
 
-    let task = null;
+    let task;
     try {
-        task = await prisma.task.findUnique({
-        where: {
-            id: taskId,
-            userId: global.user_id
-        },
-        select: { id: true, title: true, isCompleted: true }
-     });
+        task = await prisma.task.findUniqueOrThrow({
+            where: {
+                id: taskId,
+                userId: global.user_id
+            },
+            select: { id: true, title: true, isCompleted: true }
+        });
+
     } catch (err) {
-        if (err.code === 'P2025') {
-            return res.status(404).json({ message: "The task was not found." });
+        if (err.code === 'P2025') { 
+            return res.status(404).json({ message: "The task was not found for that id." });
         } else {
             return next(err);
         }
-    }
- 
-
-    if (!task) {
-        return res.status(404).json({
-            message: "No matching task for that id"
-        });
     }
 
     res.status(200).json(task);
@@ -77,7 +71,7 @@ async function update(req, res, next) {
     }
 
     const id = parseInt(req.params?.id);
-    let task = null;
+    let task;
 
     try {
         task = await prisma.task.update({
@@ -114,7 +108,7 @@ async function deleteTask(req, res, next) {
         })
     }
 
-    let deletedTask = null;
+    let deletedTask;
 
     try {
         deletedTask = await prisma.task.delete({

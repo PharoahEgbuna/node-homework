@@ -14,9 +14,9 @@ async function register(req, res, next) {
         });
     } 
     
-    let user = null;
+    let user;
     value.hashedPassword = await hashPassword(value.password);
-
+    
     try {
         user = await prisma.user.create({
             data: {name: value.name, email: value.email, hashedPassword: value.hashedPassword },
