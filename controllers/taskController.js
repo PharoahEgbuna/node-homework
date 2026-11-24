@@ -9,8 +9,8 @@ async function create(req, res) {
     if (error) return res.status(400).json({ message: "Failed to create" })
 
     const createdTask = await prisma.task.create({
-        data: { title: value.title, isCompleted: value.isCompleted, userId: global.user_id },
-        select: { id: true, title: true, isCompleted: true }
+        data: { title: value.title, isCompleted: value.isCompleted, userId: global.user_id, priority: value.priority},
+        select: { id: true, title: true, isCompleted: true, priority: true}
     });
 
     const task = createdTask;
@@ -19,19 +19,72 @@ async function create(req, res) {
 }
 
 async function index(req, res) {    
+    const whereClause = { userId: global.user_id };
+    const page = parseInt(req.query?.page) || 1;
+    const limit = parseInt(req.query?.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const getOrderBy = (query) => {
+        const validSortFields = ["title", "priority", "createdAt", "id", "isCompleted"];
+        const sortBy = query.sortBy || "createdAt";
+        const sortDirection = query.sortDirection === "asc" ? "asc" : "desc";
+  
+        if (validSortFields.includes(sortBy)) {
+            return { [sortBy]: sortDirection };
+        }
+        return { createdAt: "desc" }; // default fallback
+    };
+
+    if (req.query.find) {
+        whereClause.title = { 
+            contains: req.query.find,
+            mode: 'insensitive' 
+        };
+    }
+
     const tasks = await prisma.task.findMany({ 
-        where: { userId: global.user_id },
-        select: { id: true, title: true, isCompleted: true }
+        where: whereClause,
+        select: { 
+            id: true, 
+            title: true, 
+            isCompleted: true,
+            priority: true,
+            createdAt: true,
+            User: {
+                select: {
+                    name: true,
+                    email: true
+                }
+            }
+
+        },
+        skip: skip,
+        take: limit,
+        orderBy: getOrderBy(req.query)
     });
-    
+
     if (tasks.length === 0) {
         return res.status(404).json({ message: "No tasks for user" });
     }
 
-    res.status(200).json(tasks);
+    const totalTasks = await prisma.task.count({
+        where: whereClause
+    });
+    
+    const pagination = {
+        page,
+        limit,
+        total: totalTasks,
+        pages: Math.ceil(totalTasks / limit),
+        hasNext: page * limit < totalTasks,
+        hasPrev: page > 1
+    }
+
+    res.status(200).json({ tasks, pagination });
 }
 
 async function show(req, res, next) {
+    
     const taskId = parseInt(req.params?.id); 
 
     if (Number.isNaN(taskId) ) {
@@ -61,6 +114,41 @@ async function show(req, res, next) {
     res.status(200).json(task);
 }
 
+async function bulkCreate (req, res, next)  {
+    const { tasks } = req.body;
+
+    if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+        return res.status(400).json({ error: "Invalid request data. Expected an array of tasks." });
+    }
+
+    const validTasks = [];
+
+    for (const task of tasks) {
+        const { error, value } = taskSchema.validate(task, { abortEarly: false });
+        if (error) {
+            return res.status(400).json({ error: "Validation failed", details: error.details });
+        }
+
+        validTasks.push({
+            title: value.title,
+            isCompleted: value.isCompleted || false,
+            priority: value.priority || "medium",
+            userId: global.user_id
+        });
+    }
+
+    try {
+        const result = await prisma.task.createMany({
+            data: validTasks,
+            skipDuplicates: true
+        });
+
+        res.status(201).json({ message: "Bulk task creation successful", tasksCreated: result.count, totalRequested: validTasks.length});
+    } catch (err) {
+        return next(err);
+    }
+}
+
 async function update(req, res, next) {
     const { error, value } = patchTaskSchema.validate(req.body, { abortEarly: false });
 
@@ -80,8 +168,12 @@ async function update(req, res, next) {
                 id,
                 userId: global.user_id
             },
-            select: { id: true, title: true, isCompleted: true }
+            select: { id: true, title: true, isCompleted: true, priority: true }
         });
+        
+        if (!task) { throw new Error("The task was not found.") }
+
+        res.status(200).json(task);
     } catch (err) {
         if (err.code === 'P2025') {
             return res.status(404).json({ message: "The task was not found." });
@@ -89,14 +181,6 @@ async function update(req, res, next) {
             return next(err);
         }
     }
-
-    if (!task) {
-        return res.status(404).json({
-            message: "No matching task found for that id",
-        });
-    }
-
-    res.status(200).json(task);
 }
     
 async function deleteTask(req, res, next) {
@@ -118,6 +202,9 @@ async function deleteTask(req, res, next) {
             },
             select: { id: true, title: true, isCompleted: true }
         });
+
+        if (!deletedTask) { throw new Error("The task was not found.") }
+        res.status(200).json(deletedTask);
     } catch (err) {
         if (err.code === 'P2025') {
             return res.status(404).json({ message: "The task was not found." });
@@ -125,20 +212,13 @@ async function deleteTask(req, res, next) {
             return next(err);
         }
     }
-
-    if (!deletedTask) {
-        return res.status(404).json({
-            message: "No matching task found for that id",
-        });
-    }
-
-    res.status(200).json(deletedTask);
 }
 
 module.exports = {
     create,
     index,
     show,
-    update, 
+    update,
+    bulkCreate,
     deleteTask
 }
