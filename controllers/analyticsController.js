@@ -1,5 +1,4 @@
 const prisma = require("../db/prisma");
-const { analyticTaskSchema } = require("../validation/taskSchema");
 
 async function getUserAnalytics(req, res, next) {
     const userId = parseInt(req.params.id);
@@ -69,16 +68,8 @@ async function getUserAnalytics(req, res, next) {
 }
 
 async function getUsersWithStats (req, res) {
-    const { error, value } = analyticTaskSchema.validate(req.body, { abortEarly: false });
-
-    if (error) {
-        return res.status(400).json({
-            message: "Invalid page number or limit size",
-        })
-    }
-    
-    const page = parseInt(req.query?.page) || value.page;
-    const limit = parseInt(req.query?.limit) || value.limit;
+    const page = parseInt(req.query?.page) || 1;
+    const limit = parseInt(req.query?.limit) || 10;
     const skip = (page - 1) * limit;
 
     const usersRaw = await prisma.user.findMany({

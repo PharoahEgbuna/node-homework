@@ -76,10 +76,6 @@ async function index(req, res) {
         hasPrev: page > 1
     }
 
-    if (tasks.length === 0) {
-        return res.status(200).json({tasks: [], pagination });
-    }
-
     res.status(200).json({ tasks, pagination });
 }
 
@@ -99,7 +95,17 @@ async function show(req, res, next) {
                 id: taskId,
                 userId: global.user_id
             },
-            select: { id: true, title: true, isCompleted: true }
+            select: { 
+                id: true, 
+                title: true, 
+                isCompleted: true,
+                User: {
+                    select: {
+                        name: true, 
+                        email: true
+                    }
+                }
+            }
         });
 
     } catch (err) {
