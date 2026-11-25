@@ -14,7 +14,6 @@ app.use(express.json());
 global.user_id = null;
 
 app.use("/api", timeRouter);
-// app.use("/api/users/:id", authMiddleware, userRouter);
 app.use("/api/users", userRouter);
 app.use("/api/tasks", authMiddleware, taskRouter);
 app.use("/api/analytics", authMiddleware, analyticsRouter)

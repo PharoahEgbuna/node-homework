@@ -12,9 +12,4 @@ const patchTaskSchema = Joi.object({
   priority: Joi.string().valid("low", "medium", "high").not(null),
 }).min(1).message("No attributes to change were specified.");
 
-const analyticTaskSchema = Joi.object({
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(99).default(10),
-});
-
-module.exports = { taskSchema, patchTaskSchema, analyticTaskSchema };
+module.exports = { taskSchema, patchTaskSchema };
