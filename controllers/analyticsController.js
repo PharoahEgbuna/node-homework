@@ -77,8 +77,8 @@ async function getUsersWithStats (req, res) {
         })
     }
     
-    const page = value.page;
-    const limit = value.limit;
+    const page = req.query.page || value.page;
+    const limit = req.query.limit || value.limit;
     const skip = (page - 1) * limit;
 
     const usersRaw = await prisma.user.findMany({

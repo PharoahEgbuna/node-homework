@@ -105,7 +105,7 @@ async function show(req, res) {
     }
 
     if (userId == global.user_id) {
-        return res.status(403).jsono({ error: "Forbidden" });
+        return res.status(403).json({ error: "Forbidden" });
     }
 
     const user = await prisma.user.findUnique({
