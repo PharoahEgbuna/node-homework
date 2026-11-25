@@ -145,7 +145,7 @@ async function bulkCreate (req, res, next)  {
     try {
         const result = await prisma.task.createMany({
             data: validTasks,
-            skipDuplicates: true
+            skipDuplicates: false
         });
 
         res.status(201).json({ message: "Bulk task creation successful", tasksCreated: result.count, totalRequested: validTasks.length});
