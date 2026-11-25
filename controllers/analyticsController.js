@@ -68,32 +68,34 @@ async function getUserAnalytics(req, res, next) {
 }
 
 async function getUsersWithStats (req, res) {
-    // const { error, value } = analyticTaskSchema.validate(req.body, { abortEarly: false });
+    const { error, value } = analyticTaskSchema.validate(req.body, { abortEarly: false });
 
-    // if (error) {
-    //     return res.status(400).json({
-    //         message: "Invalid page number or limit size",
-    //     })
-    // }
+    if (error) {
+        return res.status(400).json({
+            message: "Invalid page number or limit size",
+        })
+    }
     
-    // const page = value.page;
-    // const limit = value.limit;
-    const page = req.query.
+    const page = value.page;
+    const limit = value.limit;
     const skip = (page - 1) * limit;
 
     const usersRaw = await prisma.user.findMany({
         include: {
             Task: {
-                where: { isCompleted: false },
-                select: { id: true },
-                take: 5
+            where: { isCompleted: false },
+            select: { id: true },
+            take: 5
             },
             _count: {
-                select: { Task: true }
+            select: {
+                Task: true
+            }
             }
         },
         skip: skip,
-        take: limit
+        take: limit,
+        orderBy: { createdAt: 'desc' }
     });
 
     const users = usersRaw.map(user => ({
@@ -111,7 +113,10 @@ async function getUsersWithStats (req, res) {
         page,
         limit,
         totalUsers,
-        totalPages: Math.ceil(totalUsers / limit)
+        totalPages: Math.ceil(totalUsers / limit),
+        hasNext: page * limit < totalUsers,
+        hasPrev: page > 1
+
     };
     
     res.status(200).json({ users, pagination });
@@ -119,13 +124,13 @@ async function getUsersWithStats (req, res) {
 
 async function searchTasks (req, res) {
     const searchQuery = req.query.q;
-    if (!searchQuery || searchQuery.trim.length < 2) {
-        return res.status(400).json({
-            error: "Search query must be at least 2 characters long"
+    if (!searchQuery || searchQuery.trim().length < 2) {
+        return res.status(400).json({ 
+            error: "Search query must be at least 2 characters long" 
         });
     }
 
-    const limit = req.query.limit || 20;
+    const limit = req.query.limit;
 
     const searchPattern = `%${searchQuery}%`;
     const exactMatch = searchQuery;
@@ -133,28 +138,29 @@ async function searchTasks (req, res) {
 
     const searchResults = await prisma.$queryRaw`
     SELECT 
-        t.id
-        t.title
+        t.id,
+        t.title,
         t.is_completed as "isCompleted",
         t.priority,
-        i.created_at as "userId",
+        t.created_at as "createdAt",
+        t.user_id as "userId",
         u.name as "user_name"
-    FROM tasks t 
+    FROM tasks t
     JOIN users u ON t.user_id = u.id
-    WHERE t.title ILIKE ${searchPattern}
+    WHERE t.title ILIKE ${searchPattern} 
         OR u.name ILIKE ${searchPattern}
     ORDER BY 
-        CASE
-            WHEN t.title ILIKE ${exactMatch} THEN 1
-            WHEN t.title ILIKE ${startsWith} THEN 2
-            WHEN t.title ILIKE ${searchPattern} THEN 3
-            ELSE 4
+        CASE 
+        WHEN t.title ILIKE ${exactMatch} THEN 1
+        WHEN t.title ILIKE ${startsWith} THEN 2
+        WHEN t.title ILIKE ${searchPattern} THEN 3
+        ELSE 4
         END,
         t.created_at DESC
     LIMIT ${parseInt(limit)}
     `;
 
-    res.status(200).json({ results: searchResults, query: searchQuery, count: searchResults.count})
+    res.status(200).json({ results: searchResults, query: searchQuery, count: searchResults.length})
 
 }
 module.exports = {
