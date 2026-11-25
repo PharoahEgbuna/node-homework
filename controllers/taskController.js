@@ -63,10 +63,6 @@ async function index(req, res) {
         orderBy: getOrderBy(req.query)
     });
 
-    if (tasks.length === 0) {
-        return res.status(404).json({ message: "No tasks for user" });
-    }
-
     const totalTasks = await prisma.task.count({
         where: whereClause
     });
@@ -80,74 +76,77 @@ async function index(req, res) {
         hasPrev: page > 1
     }
 
+    if (tasks.length === 0) {
+        return res.status(404).json({ message: "No tasks for user" });
+    }
+
     res.status(200).json({ tasks, pagination });
 }
 
 async function show(req, res, next) {
-    
-    // const taskId = parseInt(req.params?.id); 
+    const taskId = parseInt(req.params?.id); 
 
-    // if (Number.isNaN(taskId) ) {
-    //     return res.status(400).json({
-    //         message: "Invalid id",
-    //     });
-    // }
-
-    // let task;
-    // try {
-    //     task = await prisma.task.findUniqueOrThrow({
-    //         where: {
-    //             id: taskId,
-    //             userId: global.user_id
-    //         },
-    //         select: { id: true, title: true, isCompleted: true }
-    //     });
-
-    // } catch (err) {
-    //     if (err.code === 'P2025') { 
-    //         return res.status(404).json({ message: "The task was not found for that id." });
-    //     } else {
-    //         return next(err);
-    //     }
-    // }
-
-    // res.status(200).json(task);
-    const userId = parseInt(req.params.id);
-    
-    if (isNaN(userId)) {
-        return res.status(400).json({ error: "Invalid user ID" });
+    if (Number.isNaN(taskId) ) {
+        return res.status(400).json({
+            message: "Invalid id",
+        });
     }
 
-    if (userId !== global.user_id) {
-        return res.status(403).json({ error: "Forbidden" });
-    }
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-        Task: {
-            where: { isCompleted: false },
-            select: { 
-            id: true, 
-            title: true, 
-            priority: true,
-            createdAt: true 
+    let task;
+    try {
+        task = await prisma.task.findUniqueOrThrow({
+            where: {
+                id: taskId,
+                userId: global.user_id
             },
-            orderBy: { createdAt: 'desc' },
-            take: 5
-        }
-        }
-    });
+            select: { id: true, title: true, isCompleted: true }
+        });
 
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
+    } catch (err) {
+        if (err.code === 'P2025') { 
+            return res.status(404).json({ message: "The task was not found for that id." });
+        } else {
+            return next(err);
+        }
     }
 
-    res.status(200).json(user);
+    res.status(200).json(task);
+    // const userId = parseInt(req.params.id);
+    
+    // if (isNaN(userId)) {
+    //     return res.status(400).json({ error: "Invalid user ID" });
+    // }
+
+    // if (userId !== global.user_id) {
+    //     return res.status(403).json({ error: "Forbidden" });
+    // }
+
+    // const user = await prisma.user.findUnique({
+    //     where: { id: userId },
+    //     select: {
+    //     id: true,
+    //     name: true,
+    //     email: true,
+    //     createdAt: true,
+    //     Task: {
+    //         where: { isCompleted: false },
+    //         select: { 
+    //         id: true, 
+    //         title: true, 
+    //         priority: true,
+    //         createdAt: true 
+    //         },
+    //         orderBy: { createdAt: 'desc' },
+    //         take: 5
+    //     }
+    //     }
+    // });
+
+    // if (!user) {
+    //     return res.status(404).json({ message: "User not found" });
+    // }
+
+    // res.status(200).json(user);
 }
 
 async function bulkCreate (req, res, next)  {

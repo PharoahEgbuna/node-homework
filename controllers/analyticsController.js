@@ -7,7 +7,7 @@ async function getUserAnalytics(req, res, next) {
         return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const findUser = prisma.user.findUnique({
+    const findUser = await prisma.user.findUnique({
         where: {
             id: userId
         }
@@ -17,6 +17,7 @@ async function getUserAnalytics(req, res, next) {
         res.status(404).json({
             message: "User not found"
         })
+        return;
     }
 
     try {
@@ -107,14 +108,14 @@ async function getUsersWithStats (req, res) {
         Task: user.Task
     }));
 
-    const totalUsers = await prisma.user.count();
+    const total = await prisma.user.count();
 
     const pagination = {
         page,
         limit,
-        totalUsers,
-        totalPages: Math.ceil(totalUsers / limit),
-        hasNext: page * limit < totalUsers,
+        total,
+        pages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1
 
     };
@@ -130,7 +131,7 @@ async function searchTasks (req, res) {
         });
     }
 
-    const limit = req.query.limit;
+    const limit = req.query.limit || 20;
 
     const searchPattern = `%${searchQuery}%`;
     const exactMatch = searchQuery;
@@ -163,6 +164,7 @@ async function searchTasks (req, res) {
     res.status(200).json({ results: searchResults, query: searchQuery, count: searchResults.length})
 
 }
+
 module.exports = {
     getUserAnalytics,
     getUsersWithStats,
