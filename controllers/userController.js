@@ -104,7 +104,7 @@ async function show(req, res) {
         return res.status(400).json({ error: "Invalid user ID"});
     }
 
-    if (userId == global.user_id) {
+    if (userId !== global.user_id) {
         return res.status(403).json({ error: "Forbidden" });
     }
 
